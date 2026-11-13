@@ -8,6 +8,24 @@ This project implements an **IoT-based earthquake early warning system** that no
 
 ---
 
+## 🎬 Demo
+
+Watch the demonstration of the IoT-based Earthquake Early Warning and Vital Utilities Shut-off System in action.
+
+The demo showcases the end-to-end workflow, including:
+
+- Real-time sensor data publishing via MQTT.
+- Earthquake detection and threshold monitoring.
+- Automatic warning generation by the controller.
+- Activation of audible and visual alarms.
+- Automatic shut-off of electricity, gas, and water.
+- System monitoring and management through the Telegram bot.
+
+<p align="center">
+  <video src="./demo.mp4" width="800" controls></video>
+</p>
+---
+
 ## Architecture Overview
 
 <img width="823" height="640" alt="Untitled Diagram_1" src="https://github.com/user-attachments/assets/1cc80836-793c-463c-a7e9-f314c0a48b15" />
