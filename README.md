@@ -21,9 +21,11 @@ The demo showcases the end-to-end workflow, including:
 - Automatic shut-off of electricity, gas, and water.
 - System monitoring and management through the Telegram bot.
 
-<p align="center">
-  <video src="./demo.mp4" width="800" controls></video>
-</p>
+### 🎥 System Demonstration
+
+[![Watch the Demo](./assets/demo-thumbnail.png)](https://drive.google.com/file/d/1vybizoU7w1bVRLN1NNh0iGl46-Q6AEOh/view?usp=drive_link)
+
+*Click the image above to watch the full system demonstration.*
 ---
 
 ## Architecture Overview
