@@ -10,23 +10,9 @@ This project implements an **IoT-based earthquake early warning system** that no
 
 ## 🎬 Demo
 
-Watch the demonstration of the IoT-based Earthquake Early Warning and Vital Utilities Shut-off System in action.
+See the end-to-end workflow, from MQTT sensor readings and earthquake detection to alerts, utility shut-off, and Telegram monitoring.
 
-The demo showcases the end-to-end workflow, including:
-
-- Real-time sensor data publishing via MQTT.
-- Earthquake detection and threshold monitoring.
-- Automatic warning generation by the controller.
-- Activation of audible and visual alarms.
-- Automatic shut-off of electricity, gas, and water.
-- System monitoring and management through the Telegram bot.
-
-### 🎥 System Demonstration
-
-[![Watch the Demo](./assets/demo-thumbnail.png)](https://drive.google.com/file/d/1vybizoU7w1bVRLN1NNh0iGl46-Q6AEOh/view?usp=drive_link)
-
-*Click the image above to watch the full system demonstration.*
----
+[▶ Watch the demo on Google Drive](https://drive.google.com/file/d/1vybizoU7w1bVRLN1NNh0iGl46-Q6AEOh/view?usp=drive_link) · [Open the MP4 in this repository](./demo.mp4)
 
 ## Architecture Overview
 
@@ -36,7 +22,7 @@ The demo showcases the end-to-end workflow, including:
 The system consists of the following components:
 
 ### 1. Sensors
-- Digital accelerometers and geophones.  
+- Accelerometer and velocity sensors.
 - Sensors publish data in **SenML format** to MQTT topics.
 
 ### 2. Message Broker (MQTT)
@@ -75,34 +61,33 @@ The `utils/` folder contains reusable Python modules that are imported across se
 
 ## Prerequisites
 
-- Python 3.11+  
-- Python libraries:
+- Python 3.14 or newer
+- Access to an MQTT broker and REST catalog
+
+Create and activate a virtual environment, then install the dependencies:
+
 ```bash
-pip install -r requirements.txt
+python3.14 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
-- Access to an MQTT broker and REST catalog
+Copy `.env.example` to `.env` and set your Telegram bot token in it:
+
+```dotenv
+TELEGRAM_BOT_TOKEN=your-telegram-bot-token
+```
+
+The `.env` file is ignored by Git. Non-secret runtime settings are in `config/system_config.json`.
 
 ---
 
 ## Running the System
 
-The system is designed to be run **from a single `main.py` file**. Running this file will start all services in the correct order:
+Run the system from the repository root:
 
-```python
-SERVICES = [
-    ("Data Catalog",          "services.Data_catalog"),
-    ("Static Web Service",    "services.static_web_service"),
-    ("Accelerometer Sensor",  "sensors.accelerometer_sensor"),
-    ("Velocity Sensor",       "sensors.velocity_sensor"),
-    ("Controller",            "services.controller"),
-    ("Buzzer Alarm",          "actuators.buzzer_alarm"),
-    ("Flashing Light",        "actuators.flashing_Light"),
-    ("Electricity Cutoff",    "actuators.electricity_cutoff"),
-    ("Gas Cutoff",            "actuators.gas_cutoff"),
-    ("Water Cutoff",          "actuators.water_cutoff"),
-    ("Telegram Bot",          "services.telegram_bot")
-]
+```bash
+python main.py
 ```
 
 **Execution sequence:**  
@@ -113,7 +98,7 @@ SERVICES = [
 5. Actuators: `Buzzer Alarm` → `Flashing Light` → `Electricity/Gas/Water Cutoff`  
 6. `Telegram Bot`
 
-After running `main.py`, you can fully configure and monitor the system using the Telegram bot `@EEWiotbot`.
+After startup, configure and monitor the system using the Telegram bot `@EEWiotbot`.
 
 ---
 
@@ -150,50 +135,41 @@ Note: the same flow can also be done through the Telegram bot.
 **Available test modules:**
 
 - `TEST_add_devices.py` – test device registration  
-- `TEST_remove_devices.py` – test device removal  
+- `TEST_remove_sensors.py` – test device removal
 - `TEST_mqtt_sub.py` – test MQTT subscription  
 - `TEST_fake_accelerometer.py` – simulate accelerometer sensor data  
 - `TEST_fake_velocitymeter.py` – simulate velocity sensor data  
 
 ---
-⚠️ The system has been designed to minimize hardcoding; almost all parameters are configurable through the JSON file. (conf/ -> system_config.json)
----
-Configurable Parameters:
 
-REST Endpoints – IP and port of Data Catalog and Web Service
+## Configuration
 
-MQTT Broker – Host and port of the MQTT broker
-
-Thresholds – Warning and cut-off levels for acceleration and velocity
-
-Telegram Bot Token – read from the local `.env` file
-
-Sensor Interval – Time interval for sensor data publishing (in seconds)
-
-EQ_time_check – Time window for earthquake detection logic
-
-Before running the system, create a `.env` file in the project root and add your Telegram bot token:
-
-```dotenv
-TELEGRAM_BOT_TOKEN=your-telegram-bot-token
-```
-
-The `.env` file is ignored by Git. Keep `config/system_config.json` for non-secret application settings.
+The non-secret settings in `config/system_config.json` include REST endpoints, the MQTT broker, warning and cut-off thresholds, the sensor interval, and the earthquake detection time window. Set the Telegram bot token separately in `.env` as described above.
 
 ## Directory Structure
 
 ```
-/IoT_Project
+.
 │
-├──/conf/                   # Configuration folder (system_config.json)
+├── config/                 # Runtime configuration
+├── data/                   # Sensor data
 ├── sensors/                # Accelerometer and velocity sensors
 ├── actuators/              # Buzzer, flashing light, and cut-off actuators
 ├── services/               # Data catalog, web service, controller, Telegram bot
 ├── utils/                  # Reusable utility modules
 ├── test/                   # Testing scripts
-├── main.py                 # Main file to start the entire system in order
-├── requirements.txt        # the installation requirements
-├── DiagramـofـUseـCase.jpg # the application diagram.
-└── README.md
+├── .env.example            # Environment variable template
+├── Diagram_of_Use_Case.jpg # System diagram
+├── LICENSE
+├── README.md
+├── demo.mp4
+├── main.py
+├── pyproject.toml
+├── requirements.txt
+└── uv.lock
 
 ```
+
+## License
+
+This project is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License. See [LICENSE](./LICENSE) for the terms. Commercial use requires the author's written permission.
