@@ -1,6 +1,11 @@
 import json
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 class ConfigLoader:
     def __init__(self, config_file=os.path.join("config", "system_config.json")):
         # Load config from file
@@ -10,12 +15,14 @@ class ConfigLoader:
         # REST catalog URL
         rest_config = config["rest"]["catalog"]
         self.catalog_url = f"http://{rest_config['host']}:{rest_config['port']}"
-        self.catalog_host = rest_config['host']
-        self.catalog_port = rest_config['port']
+        self.catalog_host = rest_config["host"]
+        self.catalog_port = rest_config["port"]
 
         # REST 06_static_web_service URL
         rest_SWS_config = config["rest"]["web_service"]
-        self.static_web_url = f"http://{rest_SWS_config['host']}:{rest_SWS_config['port']}"
+        self.static_web_url = (
+            f"http://{rest_SWS_config['host']}:{rest_SWS_config['port']}"
+        )
 
         # MQTT broker info
         mqtt_config = config["mqtt"]["broker"]
@@ -36,5 +43,10 @@ class ConfigLoader:
         # Earthquake time that we will check. (like if the acc is above thr. for 30 ms it will be Eq.)
         self.EQ_time_check = config["EQ_time_check"]
 
-        # Telegram Token
-        self.Token_config = config["TOKEN"]
+        # Telegram token is kept outside the tracked JSON config.
+        self.Token_config = os.getenv("TELEGRAM_BOT_TOKEN")
+        if not self.Token_config:
+            raise ValueError(
+                "Telegram token is missing. Set TELEGRAM_BOT_TOKEN in .env "
+                "or in the process environment."
+            )

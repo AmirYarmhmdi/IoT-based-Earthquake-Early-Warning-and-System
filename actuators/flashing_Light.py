@@ -1,6 +1,9 @@
 # flashing_Light.py
-import json, time
+import json
+import time
+
 from actuators.base_actuator import BaseActuator
+
 
 class FlashingActuator(BaseActuator):
     def __init__(self):
@@ -30,6 +33,7 @@ class FlashingActuator(BaseActuator):
         for _ in range(repeats):
             print("*** !FLASHING! ***")
             time.sleep(delay)
+
 
 # ------------------- Main -------------------
 if __name__ == "__main__":

@@ -1,10 +1,15 @@
 # controller.py
 
+import json
+import time
+
 import paho.mqtt.client as mqtt
-import requests, json, time
+import requests
+
 from utils.config_loader import ConfigLoader
 from utils.device_registrar import DeviceRegistrar
 from utils.topic_fetcher import TopicFetcher
+
 
 class Controller:
     def __init__(self):
@@ -19,7 +24,7 @@ class Controller:
         self.mqtt_port = cfg.mqtt_port
         self.Acc_thresholds = cfg.thresholds_Acc
         self.V_thresholds = cfg.thresholds_Vel
-        self.EQ_time_check = cfg.EQ_time_check # 0.3 or 300 ms
+        self.EQ_time_check = cfg.EQ_time_check  # 0.3 or 300 ms
 
         # Fetch warning topic
         fetcher = TopicFetcher(self.catalog_url)
@@ -29,7 +34,7 @@ class Controller:
         payload = {
             "type": "Controller",
             "building": "Central_Unit",
-            "location": {"latitude": "Central_Unit", "longitude": "Central_Unit"}
+            "location": {"latitude": "Central_Unit", "longitude": "Central_Unit"},
         }
         registrar = DeviceRegistrar(self.catalog_url)
         self.client_id, self.topic = registrar.register(payload)
@@ -57,9 +62,9 @@ class Controller:
         self.mqtt_client.on_connect = self.on_connect
         self.mqtt_client.on_message = self.on_message
         self.mqtt_client.connect(self.mqtt_host, self.mqtt_port)
-        self.mqtt_client.loop_start()  
+        self.mqtt_client.loop_start()
 
-    def on_connect(self, client, userdata, flags, rc,properties=None):
+    def on_connect(self, client, userdata, flags, rc, properties=None):
         if rc == 0:
             print("[MQTT][controller] Connected to broker.")
             for topic in set(self.sensor_topics):
@@ -73,11 +78,10 @@ class Controller:
             self.mqtt_client.subscribe(topic, qos=0)
             print(f"[INFO][controller] Subscribed to sensor topic: {topic}")
 
-
     # --- Message callback (check the thresholds on recieved message) ---
     def on_message(self, client, userdata, msg):
         try:
-            data = json.loads(msg.payload.decode('utf-8'))
+            data = json.loads(msg.payload.decode("utf-8"))
             sensor_id = data.get("bn")
             timestamp = data["e"][0]["t"]
             sensor_type = data["e"][0]["n"]
@@ -99,7 +103,7 @@ class Controller:
                 print(f"[WARN][controller] Unknown data format received: {sensor_type}")
                 return
 
-            x = values.get("x", 0.0) #if no value -> 0.0
+            x = values.get("x", 0.0)  # if no value -> 0.0
             y = values.get("y", 0.0)
 
             # --- State init ---
@@ -111,22 +115,25 @@ class Controller:
                     "warn_start": None,
                     "eq_start": None,
                     "alarm_sent": False,
-                    "eq_sent": False
+                    "eq_sent": False,
                 }
             st = self.state[sensor_id][sensor_type]
 
             # --- Reset below threshold ---
-            if x < warning_Thr and y< warning_Thr:
-                self.state[sensor_id][sensor_type] ={
-                    "warn_start": None, "eq_start": None,
-                    "alarm_sent": False, "eq_sent": False}
+            if x < warning_Thr and y < warning_Thr:
+                self.state[sensor_id][sensor_type] = {
+                    "warn_start": None,
+                    "eq_start": None,
+                    "alarm_sent": False,
+                    "eq_sent": False,
+                }
                 return
 
             # --- Above thresholds ---
-            if (x >= warning_Thr or y>= warning_Thr) and st["warn_start"] is None:
+            if (x >= warning_Thr or y >= warning_Thr) and st["warn_start"] is None:
                 st["warn_start"] = timestamp
 
-            if (x >= EQCuttoff_Thr or y>= EQCuttoff_Thr):
+            if x >= EQCuttoff_Thr or y >= EQCuttoff_Thr:
                 if st["eq_start"] is None:
                     st["eq_start"] = timestamp
             else:

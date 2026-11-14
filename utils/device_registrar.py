@@ -1,6 +1,7 @@
 # device_registrar.py
 import requests
 
+
 class DeviceRegistrar:
     def __init__(self, catalog_url):
         self.catalog_url = catalog_url
@@ -9,12 +10,14 @@ class DeviceRegistrar:
         """
         Registers a device (sensor/actuator/controller) in the catalog.
         payload (dict):
-                        device info to register & device_type 
+                        device info to register & device_type
         Returns:
                         (client_id, topic) from catalog
         """
         try:
-            response = requests.post(f"{self.catalog_url}/register_device", json=payload)
+            response = requests.post(
+                f"{self.catalog_url}/register_device", json=payload
+            )
             response.raise_for_status()
             data = response.json()
             client_id = data["client_id"]

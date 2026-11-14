@@ -1,10 +1,11 @@
 # sensor_storage.py
 
+import csv
 import json
 import os
-import time
 import threading
-import csv
+import time
+
 
 class SensorStorage:
     def __init__(self):
@@ -33,7 +34,7 @@ class SensorStorage:
             if self.last_saved_second.get(sensor_id) == current_second:
                 return
             self.last_saved_second[sensor_id] = current_second
-            
+
             reading = None
             if sensor_type in ["acceleration", "velocity"]:
                 values = payload["e"][0]["v"]
@@ -43,29 +44,34 @@ class SensorStorage:
                     "t": timestamp,
                     "x": values.get("x", 0.0),
                     "y": values.get("y", 0.0),
-                    "z": values.get("z", 0.0)
+                    "z": values.get("z", 0.0),
                 }
-            
+
             if reading:
                 # --- Save to CSV file ---
                 csv_filename = os.path.join(self.data_folder, f"{sensor_id}.csv")
                 csv_header = ["timestamp", "name", "unit", "x", "y", "z"]
-                
-                write_header = not os.path.exists(csv_filename) or os.path.getsize(csv_filename) == 0
-                
-                with open(csv_filename, "a", newline='') as csvfile:
+
+                write_header = (
+                    not os.path.exists(csv_filename)
+                    or os.path.getsize(csv_filename) == 0
+                )
+
+                with open(csv_filename, "a", newline="") as csvfile:
                     writer = csv.DictWriter(csvfile, fieldnames=csv_header)
                     if write_header:
                         writer.writeheader()
-                    writer.writerow({
-                        "timestamp": reading["t"],
-                        "name": reading["n"],
-                        "unit": reading["u"],
-                        "x": reading["x"],
-                        "y": reading["y"],
-                        "z": reading["z"]
-                    })
-                    
+                    writer.writerow(
+                        {
+                            "timestamp": reading["t"],
+                            "name": reading["n"],
+                            "unit": reading["u"],
+                            "x": reading["x"],
+                            "y": reading["y"],
+                            "z": reading["z"],
+                        }
+                    )
+
                 # --- Save to JSON file ---
                 json_filename = os.path.join(self.data_folder, f"{sensor_id}.json")
                 data_list = []
@@ -74,14 +80,16 @@ class SensorStorage:
                         with open(json_filename, "r") as f:
                             data_list = json.load(f)
                     except json.JSONDecodeError:
-                        print(f"[WARNING] Corrupted JSON file found for {sensor_id}. Starting a new one.")
+                        print(
+                            f"[WARNING] Corrupted JSON file found for {sensor_id}. Starting a new one."
+                        )
                         data_list = []
-                
+
                 data_list.append(reading)
 
                 with open(json_filename, "w") as f:
                     json.dump(data_list, f, indent=2)
-                
+
     def get_history(self, sensor_id, limit):
         json_filename = os.path.join(self.data_folder, f"{sensor_id}.json")
         if not os.path.exists(json_filename):
@@ -104,11 +112,11 @@ class SensorStorage:
         if not raw_data:
             return {"error": "No data found for this sensor.", "sensor_id": sensor_id}
 
-        sensor_type = raw_data[0].get('n')
-        
-        timestamps = [item['t'] for item in raw_data]
-        x_values = [item['x'] for item in raw_data]
-        y_values = [item['y'] for item in raw_data]
+        sensor_type = raw_data[0].get("n")
+
+        timestamps = [item["t"] for item in raw_data]
+        x_values = [item["x"] for item in raw_data]
+        y_values = [item["y"] for item in raw_data]
 
         return {
             "sensor_id": sensor_id,
@@ -117,13 +125,13 @@ class SensorStorage:
                 "timestamps": timestamps,
                 "x_axis": {
                     "label": f"{sensor_type.capitalize()} X",
-                    "values": x_values
+                    "values": x_values,
                 },
                 "y_axis": {
                     "label": f"{sensor_type.capitalize()} Y",
-                    "values": y_values
-                }
-            }
+                    "values": y_values,
+                },
+            },
         }
 
     def get_table_data(self, sensor_id, limit=100):
@@ -131,30 +139,30 @@ class SensorStorage:
         Returns raw sensor data formatted as a list of lists, suitable for a table view.
         """
         raw_data = self.get_history(sensor_id, limit)
-        
+
         if not raw_data:
             return {"error": "No data found for this sensor.", "sensor_id": sensor_id}
 
         header = ["timestamp", "name", "unit", "x", "y", "z"]
-        
+
         table_rows = []
         for item in raw_data:
-            table_rows.append([
-                item.get("t"),
-                item.get("n"),
-                item.get("u"),
-                item.get("x"),
-                item.get("y"),
-                item.get("z")
-            ])
-            
+            table_rows.append(
+                [
+                    item.get("t"),
+                    item.get("n"),
+                    item.get("u"),
+                    item.get("x"),
+                    item.get("y"),
+                    item.get("z"),
+                ]
+            )
+
         return {
             "sensor_id": sensor_id,
-            "table_data": {
-                "header": header,
-                "rows": table_rows
-            }
+            "table_data": {"header": header, "rows": table_rows},
         }
+
     def get_sensors_with_data(self):
         # Returns a list of sensor IDs for which data files exist.
         sensors_with_data = []

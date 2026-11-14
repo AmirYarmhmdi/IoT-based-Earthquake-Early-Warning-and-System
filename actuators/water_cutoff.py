@@ -1,6 +1,9 @@
 # water_cutoff_actuator.py
-import json, time
+import json
+import time
+
 from actuators.base_actuator import BaseActuator
+
 
 class WaterCutoffActuator(BaseActuator):
     def __init__(self):
@@ -38,6 +41,7 @@ class WaterCutoffActuator(BaseActuator):
     def reconnect_water(self):
         print("Water cutoff DEACTIVATED! System reconnected.")
         print("~~~ Water flow is now ON ~~~")
+
 
 # ------------------- Main -------------------
 if __name__ == "__main__":

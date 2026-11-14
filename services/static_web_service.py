@@ -1,20 +1,26 @@
-#static_web_service
+# static_web_service
 
+import json
+import os
+import time
+
+import cherrypy
 import paho.mqtt.client as mqtt
-import cherrypy, requests 
-import json, os, time
+import requests
+
 from utils.config_loader import ConfigLoader
-from utils.device_registrar import DeviceRegistrar
-from utils.topic_fetcher import TopicFetcher
 from utils.device_manager import DeviceManager
+from utils.device_registrar import DeviceRegistrar
 from utils.sensor_storage import SensorStorage
+from utils.topic_fetcher import TopicFetcher
+
 
 class StaticWebService:
     def __init__(self):
         self.sensor_storage = SensorStorage()
         # --- FILE PATHS ---
         self.dC_file = os.path.join("config", "Data_Catalogue.json")
-        
+
         # --- MAIN DATA STRUCTURE ---
         if os.path.exists(self.dC_file):
             with open(self.dC_file, "r") as f:
@@ -24,13 +30,17 @@ class StaticWebService:
                 "project": {
                     "name": "IoT-based Earthquake Early Warning and Vital Utilities Shut-off System",
                     "version": "1.0",
-                    "developers": ["Amir Yarmohamadi", "Saeideh Mohammadikish", "Erfan Afshinnia"]
+                    "developers": [
+                        "Amir Yarmohamadi",
+                        "Saeideh Mohammadikish",
+                        "Erfan Afshinnia",
+                    ],
                 },
                 "topics": [],
                 "thresholds": {},
                 "Buildings": [],
                 "System_Status": "Monitoring",
-                "devices": {}
+                "devices": {},
             }
 
         # Load config from file
@@ -40,19 +50,21 @@ class StaticWebService:
         self.mqtt_host = cfg.mqtt_host
         self.mqtt_port = cfg.mqtt_port
         self.config_data["thresholds"] = cfg.thresholds_config
-    
-        #Fetch topics.
+
+        # Fetch topics.
         fetcher = TopicFetcher(self.catalog_url)
         self.adjust_topic = fetcher.get_adjust_topic()
         self.warning_topic = fetcher.get_warning_topic()
 
         # Register the Static_Web_Service on the Data Catalog
         registrar = DeviceRegistrar(self.catalog_url)
-        self.client_id, self.topic = registrar.register({
-            "type": "Static_Web_Service",
-            "building": "Central_Unit",
-            "location": {"latitude": "Central_Unit", "longitude": "Central_Unit"}
-        })
+        self.client_id, self.topic = registrar.register(
+            {
+                "type": "Static_Web_Service",
+                "building": "Central_Unit",
+                "location": {"latitude": "Central_Unit", "longitude": "Central_Unit"},
+            }
+        )
         # --- MQTT setup ---
         self.mqtt_client = mqtt.Client(self.client_id)
         self.mqtt_client.on_connect = self.on_connect
@@ -64,14 +76,16 @@ class StaticWebService:
         with open(self.dC_file, "w") as f:
             json.dump(self.config_data, f, indent=2)
 
-    # --- Load device list and topics from the catalog ---  
+    # --- Load device list and topics from the catalog ---
     def get_devices(self):
         url = f"{self.catalog_url}/get_devices"
         try:
             response = requests.get(url)
             response.raise_for_status()
             devices = response.json()
-            self.config_data["devices"] = devices #with all information exists in catalog for each device.
+            self.config_data["devices"] = (
+                devices  # with all information exists in catalog for each device.
+            )
 
             buildings = set()
             topics = set()
@@ -87,13 +101,15 @@ class StaticWebService:
             print(f"[ERROR][static_web_service] Failed to fetch devices: {e}")
             exit(1)
 
-    def subscribe_all_devices(self):  
-        for device_id, info in self.config_data["devices"].items():  
-            device_type = info.get("type", "")  
-            topic = info.get("topic", "")  
-            if device_type in ["Velocity_Sensor", "Accelerometer_Sensor"]:  
-                self.mqtt_client.subscribe(topic)  
-                print(f"[MQTT][static_web_service] Subscribed to topic: {topic} ({device_type})")  
+    def subscribe_all_devices(self):
+        for device_id, info in self.config_data["devices"].items():
+            device_type = info.get("type", "")
+            topic = info.get("topic", "")
+            if device_type in ["Velocity_Sensor", "Accelerometer_Sensor"]:
+                self.mqtt_client.subscribe(topic)
+                print(
+                    f"[MQTT][static_web_service] Subscribed to topic: {topic} ({device_type})"
+                )
 
     # === MQTT Connection Callback ===
     def on_connect(self, client, userdata, flags, rc):
@@ -101,15 +117,16 @@ class StaticWebService:
             print("[MQTT][static_web_service] Connected successfully.")
             # Subscribe to all existing devices' topics
             self.mqtt_client.subscribe(self.warning_topic)
-            print(f"[MQTT][static_web_service] Subscribed to WARNING topic: {self.warning_topic}")
-            self.subscribe_all_devices()  
+            print(
+                f"[MQTT][static_web_service] Subscribed to WARNING topic: {self.warning_topic}"
+            )
+            self.subscribe_all_devices()
         else:
             print(f"[MQTT][static_web_service] Connection failed with code {rc}")
 
-
     def on_message(self, client, userdata, msg):
         try:
-            payload = json.loads(msg.payload.decode('utf-8'))
+            payload = json.loads(msg.payload.decode("utf-8"))
 
             # Manage controller messages
             if "command" in payload:
@@ -124,7 +141,7 @@ class StaticWebService:
                     self.save_json_file()
             elif "e" in payload:
                 self.sensor_storage.process_message(payload)
-            
+
         except Exception as e:
             print(f"[ERROR][static_web_service] Failed to parse MQTT message: {e}")
 
@@ -136,7 +153,7 @@ class StaticWebService:
         self.mqtt_client.loop_start()
 
     #   =============================== endpoints   ==============================
-    ##############################  system details ##################################    
+    ##############################  system details ##################################
     # GET /devices - Return all registered devices
     @cherrypy.expose
     @cherrypy.tools.json_out()
@@ -156,7 +173,7 @@ class StaticWebService:
             if info.get("type") in ["Accelerometer_Sensor", "Velocity_Sensor"]:
                 sensors[device_id] = info
         return sensors
-    
+
     # GET /sensors - Return only active actuators. (buzzer, light, cutoffs)
     @cherrypy.expose
     @cherrypy.tools.json_out()
@@ -165,11 +182,16 @@ class StaticWebService:
         self.get_devices()
         actuators = {}
         for device_id, info in self.config_data["devices"].items():
-            if info.get("type") in ["Buzzer","FlashingLight","ElectricityCutoff",
-                                     "GasCutoff","WaterCutoff"]:
+            if info.get("type") in [
+                "Buzzer",
+                "FlashingLight",
+                "ElectricityCutoff",
+                "GasCutoff",
+                "WaterCutoff",
+            ]:
                 actuators[device_id] = info
         return actuators
-    
+
     # GET /devices_building?type=Accelerometer_Sensor&building=Building1
     @cherrypy.expose
     @cherrypy.tools.json_out()
@@ -179,7 +201,10 @@ class StaticWebService:
         device_ids = []
 
         for device_id, device_info in self.config_data["devices"].items():
-            if device_info.get("type") == type and device_info.get("building") == building:
+            if (
+                device_info.get("type") == type
+                and device_info.get("building") == building
+            ):
                 device_ids.append(device_id)
 
         return {"matching_devices": device_ids}
@@ -188,35 +213,33 @@ class StaticWebService:
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def status(self):
-        return {
-            "system_status": self.config_data["System_Status"]
-        }
-    
+        return {"system_status": self.config_data["System_Status"]}
+
     # GET / sensors' outputs - for drawing charts and tables
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def get_chart_data(self, sensor_id, limit=100):
         return self.sensor_storage.get_chart_data(sensor_id, limit)
-    
+
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def get_table_data(self, sensor_id, limit=20):
         return self.sensor_storage.get_table_data(sensor_id, int(limit))
-    
+
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def get_sensors_with_data(self):
         return self.sensor_storage.get_sensors_with_data()
-    
-##############################  ADD/REMOVE device ##################################
+
+    ##############################  ADD/REMOVE device ##################################
     # POST/ telegram to static_web_service -> static_web_service PUBLISH in MQTT
     # UPDATE Data_Catalogue.json & self.config_data
     # POST on cataloge to delete the client
     # MQTT Publish for the device to stop that client from operating
-#####################################################################################
+    #####################################################################################
     @cherrypy.expose
     @cherrypy.tools.json_in()
-    @cherrypy.tools.json_out()    
+    @cherrypy.tools.json_out()
     def add_device(self):
         try:
             data = cherrypy.request.json
@@ -240,14 +263,14 @@ class StaticWebService:
         except Exception:
             cherrypy.response.status = 400
             return {"error": "Invalid JSON"}
-        '''payload = 
+        """payload = 
         {
         "type": "Accelerometer_Sensor",
         "device_id": "Acc_12345"
-        }'''
+        }"""
         # Delete from Catalog and stop data generating in sensor
         manager = DeviceManager(self.mqtt_client)
-        catalog_deleted =  manager.remove_device(data)
+        catalog_deleted = manager.remove_device(data)
         self.save_json_file()
 
         # Step 3: Final Response
@@ -256,10 +279,10 @@ class StaticWebService:
         else:
             return {"error": "Device not found in catalog"}
 
-#####################  Manual shut off &  Reactivation ###############################
+    #####################  Manual shut off &  Reactivation ###############################
     # POST/ telegram to static_web_service -> static_web_service PUBLISH in MQTT
     # MQTT Publish for the device to active/stop the gas/elec./water actuators.
-#####################################################################################
+    #####################################################################################
     @cherrypy.expose
     @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
@@ -280,6 +303,7 @@ class StaticWebService:
         self.config_data["System_Status"] = "Monitoring"
         self.save_json_file()
 
+
 # ------------------- Main -------------------
 if __name__ == "__main__":
     service = StaticWebService()
@@ -287,8 +311,8 @@ if __name__ == "__main__":
     service.start_mqtt()
 
     # ----------------- Start CherryPy -----------------
-    conf = {'/': {'tools.sessions.on': True}}
-    cherrypy.tree.mount(service, '/', conf)
+    conf = {"/": {"tools.sessions.on": True}}
+    cherrypy.tree.mount(service, "/", conf)
     cherrypy.engine.start()
 
     # ----------------- Periodic device check (simple loop) -----------------

@@ -166,13 +166,19 @@ MQTT Broker – Host and port of the MQTT broker
 
 Thresholds – Warning and cut-off levels for acceleration and velocity
 
-Telegram Bot Token – API token for the system bot
+Telegram Bot Token – read from the local `.env` file
 
 Sensor Interval – Time interval for sensor data publishing (in seconds)
 
 EQ_time_check – Time window for earthquake detection logic
 
-⚠️ Make sure to update the TOKEN field with your own Telegram bot token before running the system.
+Before running the system, create a `.env` file in the project root and add your Telegram bot token:
+
+```dotenv
+TELEGRAM_BOT_TOKEN=your-telegram-bot-token
+```
+
+The `.env` file is ignored by Git. Keep `config/system_config.json` for non-secret application settings.
 
 ## Directory Structure
 

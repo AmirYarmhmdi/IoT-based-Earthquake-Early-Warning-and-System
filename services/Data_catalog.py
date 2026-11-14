@@ -1,6 +1,11 @@
+import json
+import os
+import uuid
+
 import cherrypy
-import json, uuid, os
+
 from utils.config_loader import ConfigLoader
+
 
 class DataCatalog(object):
     def __init__(self, config_file=os.path.join("config", "system_config.json")):
@@ -22,10 +27,9 @@ class DataCatalog(object):
         catalog_host = cfg.catalog_host
         catalog_port = cfg.catalog_port
 
-        cherrypy.config.update({
-            'server.socket_host': catalog_host,
-            'server.socket_port': catalog_port
-        })
+        cherrypy.config.update(
+            {"server.socket_host": catalog_host, "server.socket_port": catalog_port}
+        )
 
         print(f"CherryPy running on http://{catalog_host}:{catalog_port}")
 
@@ -40,7 +44,7 @@ class DataCatalog(object):
             "WaterCutoff": "cutoffs/water/",
             "Controller": "EQ_WARNING/",
             "Telegram_Bot": "Tbot/",
-            "Static_Web_Service": "Adjust/"
+            "Static_Web_Service": "Adjust/",
         }
 
         self.device_pref = {
@@ -53,7 +57,7 @@ class DataCatalog(object):
             "WaterCutoff": "WaC",
             "Controller": "Con",
             "Telegram_Bot": "Tel",
-            "Static_Web_Service": "Web"
+            "Static_Web_Service": "Web",
         }
 
     # ------------------- REST endpoints -------------------
@@ -95,7 +99,7 @@ class DataCatalog(object):
             "type": device_type,
             "building": building,
             "location": {"latitude": latitude, "longitude": longitude},
-            "topic": topic
+            "topic": topic,
         }
 
         return {"client_id": client_id, "topic": topic}
@@ -103,21 +107,20 @@ class DataCatalog(object):
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def get_warning_topic(self):
-        warning_topic = self.topic_map["Controller"]        #EQ_WARNING/
+        warning_topic = self.topic_map["Controller"]  # EQ_WARNING/
         return {"W_topic": warning_topic}
-    
+
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def get_adjust_topic(self):
-        Adjust_topic = self.topic_map["Static_Web_Service"]     #Adjust/
+        Adjust_topic = self.topic_map["Static_Web_Service"]  # Adjust/
         return {"Adjust_topic": Adjust_topic}
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def get_tbot_topic(self):
-        Tbot_topic = self.topic_map["Telegram_Bot"]     #Tbot/
+        Tbot_topic = self.topic_map["Telegram_Bot"]  # Tbot/
         return {"Tbot_topic": Tbot_topic}
-
 
     @cherrypy.expose
     @cherrypy.tools.json_in()
@@ -130,15 +133,16 @@ class DataCatalog(object):
             return {"result": "Device deleted from catalog"}
         else:
             return {"error": "Device not found"}
-        
+
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def get_devices(self):
         return self.devices
 
+
 # ------------------- Main -------------------
-if __name__ == '__main__':
-    conf = {'/': {'tools.sessions.on': True}}
-    cherrypy.tree.mount(DataCatalog(), '/', conf)
+if __name__ == "__main__":
+    conf = {"/": {"tools.sessions.on": True}}
+    cherrypy.tree.mount(DataCatalog(), "/", conf)
     cherrypy.engine.start()
     cherrypy.engine.block()

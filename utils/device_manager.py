@@ -1,29 +1,37 @@
 # device_manager.py
-import requests
 import json
+
+import requests
+
 from utils.config_loader import ConfigLoader
 from utils.topic_fetcher import TopicFetcher
 
+
 class DeviceManager:
     def __init__(self, mqtt_client):
-        self.all_devices = ["Accelerometer_Sensor", "Velocity_Sensor", "Buzzer",
-                            "FlashingLight","ElectricityCutoff", "GasCutoff",
-                            "WaterCutoff"]
+        self.all_devices = [
+            "Accelerometer_Sensor",
+            "Velocity_Sensor",
+            "Buzzer",
+            "FlashingLight",
+            "ElectricityCutoff",
+            "GasCutoff",
+            "WaterCutoff",
+        ]
         self.mqtt_client = mqtt_client
-        
+
         # Load config from file
         cfg = ConfigLoader()
         self.catalog_url = cfg.catalog_url
         self.mqtt_host = cfg.mqtt_host
         self.mqtt_port = cfg.mqtt_port
 
-
-        #Fetch topics.
+        # Fetch topics.
         fetcher = TopicFetcher(self.catalog_url)
         self.adjust_topic = fetcher.get_adjust_topic()
 
     def add_device(self, data: dict):
-        """ publishes MQTT message to add new device. """
+        """publishes MQTT message to add new device."""
         data["action"] = "add"
         device_type = data.get("type")
         building = data.get("building")
@@ -46,9 +54,8 @@ class DeviceManager:
         return {
             "message": f"One {device_type} adjustment message sent!",
             "MQTT topic": self.adjust_topic,
-            "payload": data
+            "payload": data,
         }
-
 
     def remove_device(self, data: dict):
         data["action"] = "remove"
@@ -60,7 +67,9 @@ class DeviceManager:
             return {"error": f"Failed to publish MQTT message: {str(e)}"}
 
         try:
-            response = requests.post(f"{self.catalog_url}/delete_device", json={"device_id": device_id})
+            response = requests.post(
+                f"{self.catalog_url}/delete_device", json={"device_id": device_id}
+            )
             if response.status_code == 200:
                 catalog_deleted = True
             else:

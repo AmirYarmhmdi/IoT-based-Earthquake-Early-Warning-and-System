@@ -1,10 +1,12 @@
 # topic_fetcher.py
 import requests
 
+
 class TopicFetcher:
     """
     Fetch topics from the catalog (REST).
     """
+
     def __init__(self, url):
 
         self.catalog_url = url
@@ -25,7 +27,7 @@ class TopicFetcher:
         except Exception as e:
             print(f"[ERROR] Failed to fetch Adjust topic via REST: {e}")
             return None
-        
+
     def get_warning_topic(self):
         """
         Fetch the Warning topic from the REST catalog.
@@ -40,4 +42,3 @@ class TopicFetcher:
         except Exception as e:
             print(f"[ERROR] Failed to fetch Warning topic via REST: {e}")
             return None
-    

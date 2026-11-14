@@ -1,10 +1,14 @@
 # base_actuator.py
-import paho.mqtt.client as mqtt
-import json, time
+import json
 import threading
+import time
+
+import paho.mqtt.client as mqtt
+
 from utils.config_loader import ConfigLoader
 from utils.device_registrar import DeviceRegistrar
 from utils.topic_fetcher import TopicFetcher
+
 
 class BaseActuator:
     def __init__(self, actuator_type):
@@ -25,7 +29,9 @@ class BaseActuator:
     # MQTT connect callback
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
-            print(f"[MQTT][baseActuator] Connected. Subscribing to Adjust topic for {self.actuator_type}...")
+            print(
+                f"[MQTT][baseActuator] Connected. Subscribing to Adjust topic for {self.actuator_type}..."
+            )
             client.subscribe(self.adjust_topic)
         else:
             print(f"[MQTT][baseActuator] Connection failed with code {rc}")
@@ -59,19 +65,23 @@ class BaseActuator:
         # Register device in catalog
         registrar = DeviceRegistrar(self.catalog_url)
         device_id, topic = registrar.register(
-            {"type": self.actuator_type, "building": building,
-             "location": {"latitude": latitude, "longitude": longitude}},
-            )
+            {
+                "type": self.actuator_type,
+                "building": building,
+                "location": {"latitude": latitude, "longitude": longitude},
+            },
+        )
 
         running = {"flag": True}
         t = threading.Thread(
-            target=self.run_single_device,
-            args=(device_id, building, topic, running)
+            target=self.run_single_device, args=(device_id, building, topic, running)
         )
         t.daemon = True
         self.sensors[device_id] = {"thread": t, "running": running}
         t.start()
-        print(f"[INFO][baseActuator] {self.actuator_type} {device_id} started for building {building}")
+        print(
+            f"[INFO][baseActuator] {self.actuator_type} {device_id} started for building {building}"
+        )
 
     def remove_device(self, device_id):
         """

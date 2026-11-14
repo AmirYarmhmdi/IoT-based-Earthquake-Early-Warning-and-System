@@ -1,6 +1,9 @@
 # Elec_cutoff_actuator.py
-import json, time
+import json
+import time
+
 from actuators.base_actuator import BaseActuator
+
 
 class ElecCutoffActuator(BaseActuator):
     def __init__(self):
@@ -38,6 +41,7 @@ class ElecCutoffActuator(BaseActuator):
     def reconnect_elec(self):
         print("Electricity cutoff DEACTIVATED! System reconnected.")
         print("~~~ Electricity flow is now ON ~~~")
+
 
 # ------------------- Main -------------------
 if __name__ == "__main__":

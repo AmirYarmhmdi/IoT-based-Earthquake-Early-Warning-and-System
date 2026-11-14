@@ -1,6 +1,9 @@
 # buzzer_alarm.py
-import json, time
+import json
+import time
+
 from actuators.base_actuator import BaseActuator
+
 
 class BuzzerActuator(BaseActuator):
     def __init__(self):
@@ -30,7 +33,6 @@ class BuzzerActuator(BaseActuator):
         for _ in range(repeats):
             print("*** !Buzzer ALARM! ***")
             time.sleep(delay)
-
 
 
 # ------------------- Main -------------------
